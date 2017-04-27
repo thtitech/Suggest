@@ -20,12 +20,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private EditText inputText;
     private ArrayAdapter<String> resultAdapter;
-    private ArrayList<String> result;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,13 +39,12 @@ public class MainActivity extends AppCompatActivity {
         suggestButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                resultAdapter.clear();
-                new SuggestThread(inputText.getText().toString().trim()).start();
+                String queryText = inputText.getText().toString().trim();
+                new SuggestThread(queryText).start();
             }
         });
 
-        result = new ArrayList<>();
-        resultAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, result);
+        resultAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, new ArrayList<String>());
         resultList.setAdapter(resultAdapter);
         resultList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -62,9 +61,12 @@ public class MainActivity extends AppCompatActivity {
 
     private Handler handler = new Handler(new Handler.Callback() {
         @Override
+        @SuppressWarnings("unchecked")
         public boolean handleMessage(Message msg) {
             switch (msg.what) {
             case MSG_RESULT:
+                resultAdapter.clear();
+                resultAdapter.addAll((List<String>)msg.obj);
                 resultAdapter.notifyDataSetChanged();
                 inputText.selectAll();
                 break;
@@ -82,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void run() {
+            ArrayList<String> result = new ArrayList<>();
             HttpURLConnection conn = null;
             String error = null;
             try {
@@ -115,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
             }
             if (result.size() == 0)
                 result.add(getString(R.string.no_suggestions));
-            handler.sendMessage(handler.obtainMessage(MSG_RESULT));
+            handler.sendMessage(handler.obtainMessage(MSG_RESULT, result));
         }
     }
 }
