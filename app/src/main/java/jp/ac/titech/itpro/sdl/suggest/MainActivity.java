@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Xml;
 import android.view.View;
 import android.widget.AdapterView;
@@ -16,6 +17,7 @@ import android.widget.ListView;
 
 import org.xmlpull.v1.XmlPullParser;
 
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -24,17 +26,24 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+
+    private final static String KEY = "MainActivity.resultList";
     private EditText inputText;
     private ArrayAdapter<String> resultAdapter;
+    private ArrayList<String> list = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if(savedInstanceState != null){
+            list = savedInstanceState.getStringArrayList(KEY);
+        }
         inputText = (EditText)findViewById(R.id.input_text);
         Button suggestButton = (Button)findViewById(R.id.suggest_button);
         ListView resultList = (ListView)findViewById(R.id.result_list);
+
 
         suggestButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -55,6 +64,15 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        if(list != null){
+            handler.sendMessage(handler.obtainMessage(MSG_RESULT, list));
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putStringArrayList(KEY, list);
     }
 
     private final static int MSG_RESULT = 1111;
@@ -118,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
             }
             if (result.size() == 0)
                 result.add(getString(R.string.no_suggestions));
+            list = new ArrayList<>(result);
             handler.sendMessage(handler.obtainMessage(MSG_RESULT, result));
         }
     }
